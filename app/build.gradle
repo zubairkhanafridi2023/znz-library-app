@@ -1,42 +1,45 @@
-name: Android CI
+plugins {
+    id 'com.android.application'
+}
 
-on:
-  push:
-    branches: [ "main" ]
+android {
+    compileSdk 35
+    namespace 'com.znzlibrary.app'
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
+    defaultConfig {
+        applicationId "com.znzlibrary.pk"
+        minSdk 21
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+    }
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
+    signingConfigs {
+        release {
+            storeFile file('znz-release.keystore')
+            storePassword 'znzlibrary123'
+            keyAlias 'znzkey'
+            keyPassword 'znzlibrary123'
+        }
+    }
 
-    - name: Create gradlew
-      run: |
-        gradle wrapper --gradle-version 8.4
-        chmod +x gradlew
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
 
-    - name: Generate Keystore
-      run: |
-        keytool -genkey -v -keystore app/znz-release.keystore \
-          -alias znzkey -keyalg RSA -keysize 2048 -validity 10000 \
-          -storepass znzlibrary123 -keypass znzlibrary123 \
-          -dname "CN=ZNZ Library, OU=ZNZ, O=ZNZ, L=Lahore, S=Punjab, C=PK"
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
 
-    - name: Build Signed AAB
-      run: ./gradlew bundleRelease
-
-    - name: Upload AAB
-      uses: actions/upload-artifact@v4
-      with:
-        name: ZNZ-Library-AAB
-        path: app/build/outputs/bundle/release/*.aab
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'com.google.android.gms:play-services-ads:23.0.0'
+}
