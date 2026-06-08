@@ -25,11 +25,25 @@ jobs:
         gradle wrapper --gradle-version 8.4
         chmod +x gradlew
 
-    - name: Build AAB
+    - name: Generate Keystore
+      run: |
+        keytool -genkey -v -keystore znz-release.keystore \
+          -alias znzkey -keyalg RSA -keysize 2048 -validity 10000 \
+          -storepass znzlibrary123 -keypass znzlibrary123 \
+          -dname "CN=ZNZ Library, OU=ZNZ, O=ZNZ, L=Lahore, S=Punjab, C=PK"
+
+    - name: Build Signed AAB
       run: ./gradlew bundleRelease
+        
+    - name: Sign AAB
+      run: |
+        jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+          -keystore znz-release.keystore \
+          -storepass znzlibrary123 -keypass znzlibrary123 \
+          app/build/outputs/bundle/release/app-release.aab znzkey
 
     - name: Upload AAB
       uses: actions/upload-artifact@v4
       with:
         name: ZNZ-Library-AAB
-        path: app/build/outputs/bundle/release/*.aab
+        path: app/build/outputs/bundle/release/app-release.aab
